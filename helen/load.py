@@ -1,10 +1,15 @@
 import logging
 from pathlib import Path
 import pandas as pd
+import yaml
 
 logger = logging.getLogger(__name__)
 
 RAW_COLUMNS = ["DATE", "DESCRIPTION", "AMOUNT", "CHECK #", "STATUS"]
+
+# Personal categorization rules live OUTSIDE the repo (they get personal as you
+# add merchants). Default location: ~/bin/helen_categories.yaml
+DEFAULT_RULES_PATH = Path.home() / "bin" / "helen_categories.yaml"
 
 def load_raw(csv_path: str | Path) -> pd.DataFrame:
     """Read the WF checking CSV into a raw dataframe.
@@ -25,4 +30,11 @@ def load_raw(csv_path: str | Path) -> pd.DataFrame:
     return posted
 
 
+def load_category_rules(yaml_path: str | Path = DEFAULT_RULES_PATH) -> dict[str, list[str]]:
+    """Read the categories YAML (default: ~/bin/helen_categories.yaml).
 
+    Kept out of the repo because the rules get personal. Side-effecting.
+    """
+    with open(yaml_path) as fh:
+        cfg = yaml.safe_load(fh)
+    return cfg["categories"]
