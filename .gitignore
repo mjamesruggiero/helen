@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Virtual environments (in case one ever lands here)
+.venv/
+venv/
+
+# OS
+.DS_Store
+
+# Data — don't commit personal financial exports
+*.csv

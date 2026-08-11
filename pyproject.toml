@@ -1,0 +1,5 @@
+[tool.pytest.ini_options]
+# Run pytest from the repo root; this makes the `helen` package importable
+# and keeps test discovery predictable.
+testpaths = ["tests"]
+pythonpath = ["."]
