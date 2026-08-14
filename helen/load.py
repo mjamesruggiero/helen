@@ -27,6 +27,8 @@ def load_raw(csv_path: str | Path) -> pd.DataFrame:
 
     posted = df[df["STATUS"] == "Posted"].copy()
     logger.info("Loaded %d rows (%d after Posted filter)", len(df), len(posted))
+
+    # enrich with check notes
     return posted
 
 
@@ -38,3 +40,9 @@ def load_category_rules(yaml_path: str | Path = DEFAULT_RULES_PATH) -> dict[str,
     with open(yaml_path) as fh:
         cfg = yaml.safe_load(fh)
     return cfg["categories"]
+
+
+def load_check_notes(yaml_path: str | Path = DEFAULT_RULES_PATH) -> dict:
+    with open(yaml_path) as fh:
+        cfg = yaml.safe_load(fh)
+    return cfg.get("checks", {})

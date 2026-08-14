@@ -4,14 +4,24 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def monthly_outgo(df, exclude_categories=("Transfers", "Income")):
+# Categories that are NOT consumption and must be excluded from "outgo".
+# By the net-worth test, these move money between accounts (or in from a paycheck)
+# rather than spending it, so they don't count as expenses:
+#   Transfers   - money moved between your own accounts
+#   Income      - paychecks (an inflow, not spend)
+#   Savings     - contributions to the AmEx high-yield savings (money set aside)
+#   Investments - brokerage contributions (Edward Jones, etc.)
+NON_EXPENSE_CATEGORIES = ("Transfers", "Income", "Savings", "Investments")
+
+
+def monthly_outgo(df, exclude_categories=NON_EXPENSE_CATEGORIES):
     """Total spend per month, excluding transfers & income"""
     spend = df[df["is_outflow"] & ~df["category"].isin(exclude_categories)]
     outgo = spend.groupby("month")["amount"].sum().abs()
     return outgo.sort_index()
 
 
-def monthly_by_category(df, exclude_categories=("Transfers", "Income")):
+def monthly_by_category(df, exclude_categories=NON_EXPENSE_CATEGORIES):
     spend = df[df["is_outflow"] & ~df["category"].isin(exclude_categories)].copy()
     spend["spend"] = -spend["amount"] # convert to positive
     pivot = (spend.pivot_table(
@@ -42,7 +52,7 @@ def income_vs_outgo(df) -> pd.DataFrame:
 def average_monthly_outgo(df, 
                           exclude_first=True, 
                           exclude_last=True, 
-                          exclude_categories=("Transfers", "Income")) -> float:
+                          exclude_categories=NON_EXPENSE_CATEGORIES) -> float:
     s = monthly_outgo(df, exclude_categories)
     if exclude_first:
         s = s.drop(s.index[0])
@@ -55,7 +65,7 @@ def average_monthly_outgo(df,
 def detect_recurring(df, 
                      min_months=3, 
                      max_cv=0.15, 
-                     exclude_categories=("Transfers", "Income")) -> pd.DataFrame:
+                     exclude_categories=NON_EXPENSE_CATEGORIES) -> pd.DataFrame:
     spend = df[df["is_outflow"] & ~df["category"].isin(exclude_categories)].copy()
     spend["spend"] = -spend["amount"]
     monthly = spend.groupby(["merchant", "month"])["amount"].sum().abs()
