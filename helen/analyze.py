@@ -95,3 +95,39 @@ def detect_recurring(df,
     return out
 
     
+ACTION_BY_CATEGORY = {
+    "Subscriptions": "review / cancel",
+    "Utilities": "negotiate / downgrade",
+    "Insurance": "negotiate / downgrade",
+    "ISP": "negotiate / downgrade",
+    "Phone": "negotiate / downgrade",
+}
+
+
+def build_cut_list(df, 
+                   min_months=3, 
+                   max_cv=0.15, 
+                   exclude_categories=NON_EXPENSE_CATEGORIES): 
+    rec = detect_recurring(df, min_months, max_cv, exclude_categories).copy()
+    rec["suggested_action"] = rec["category"].map(ACTION_BY_CATEGORY).fillna("review")
+    rec = rec.sort_values("annualized", ascending=False).reset_index(drop=True)
+    return rec
+
+
+def category_trends(df, recent=3, exclude_categories=NON_EXPENSE_CATEGORIES):
+    """Recent vs prior average monthly spend, per category"""
+    pivot = monthly_by_category(df, exclude_categories)
+    # drop partial first/last months
+    pivot = pivot.iloc[1:-1]
+    recent_rows = pivot.tail(recent)
+    prior_rows = pivot.iloc[:-recent]
+
+    out = pd.DataFrame({
+        "recent_avg": recent_rows.mean(),
+        "prior_avg": prior_rows.mean(),
+    })
+    out["delta"] = out["recent_avg"] - out["prior_avg"]
+    out["pct_change"] = out["delta"] / out["prior_avg"].replace(0, pd.NA)
+    out = out.sort_values("delta", ascending=False)
+    return out
+
