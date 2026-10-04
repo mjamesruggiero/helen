@@ -1,6 +1,8 @@
 import re
 from datetime import date, datetime
+import argparse
 import pandas as pd
+from helen.visa_load import load_pdf_pages
 
 
 def classify_section(line: str, current: str | None) -> str | None:
@@ -99,3 +101,31 @@ def parse_statement(pages: list[str]) -> pd.DataFrame:
     df["source"] = "visa"
 
     return df
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Ingest a Visa file and a checking CSV"
+    )
+    parser.add_argument(
+        "--pdf",
+        help="Input PDF",
+    )
+    parser.add_argument(
+        "--csv",
+        default=str("~/Desktop/debris/test.csv"),
+        help="Output CSV path",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable DEBUG-level logging.",
+    )
+    arguments = parser.parse_args()
+    # grab the Visa transactions
+    pages = load_pdf_pages(arguments.pdf)
+    # save them to a file
+    df = parse_statement(pages)
+    df.to_csv(arguments.csv, index=False)
+    
