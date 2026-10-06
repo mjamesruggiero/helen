@@ -1,3 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "helen"
+version = "0.1.0"
+requires-python = ">=3.13"
+dependencies = [
+    "pandas",
+    "pyyaml",
+    "pdfplumber",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "nbstripout", "jupyterlab", "nbconvert"]
+
+[tool.setuptools.packages.find]
+include = ["helen*"]
+
 [tool.pytest.ini_options]
 # Run pytest from the repo root; this makes the `helen` package importable
 # and keeps test discovery predictable.

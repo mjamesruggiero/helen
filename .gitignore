@@ -16,3 +16,5 @@ venv/
 
 # Data — don't commit personal financial exports
 *.csv
+*.pdf
+data/
