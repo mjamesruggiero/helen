@@ -1,10 +1,10 @@
 """Side-effecting orchestration module. This will replace the 'uncategorized.py' code
 and will allow notebooks to drive imperative operations or create visualizations"""
 import logging
-
 import pandas as pd
 
 from helen.identity import assign_txn_ids
+from helen.reconcile import reconcile, parse_control_totals
 from helen.store import read_transactions, upsert_transactions
 from helen.visa_load import load_pdf_pages
 from helen.visa_parse import parse_statement
@@ -18,7 +18,18 @@ logger = logging.getLogger(__name__)
 def build_visa_dataframe(pdf_paths):
     """Parse and categorize Visa PDFs into frame. Side-effecting, obviously"""
     rules = load_category_rules()
-    frames = [categorize(parse_statement(load_pdf_pages(p)), rules) for p in pdf_paths]
+    frames = []
+
+    for p in pdf_paths:
+        pages = load_pdf_pages(p)
+        df = categorize(parse_statement(pages), rules)
+        frames.append(df)
+
+        # if we found discrepancies, issue a warning, don't throw
+        discrepancies = reconcile(df, parse_control_totals(pages))
+        for d in discrepancies:
+            logger.warning("reconcile %s: expected %.2f, got %.2f (delta %.2f) in %s", 
+                           d.check, d.expected, d.actual, d.delta, p)
     return pd.concat(frames, ignore_index=True)
 
 
