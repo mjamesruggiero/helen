@@ -15,7 +15,7 @@ from helen.enrich import apply_check_notes
 
 logger = logging.getLogger(__name__)
 
-def build_visa_dataframe(pdf_paths):
+def build_visa_dataframe(pdf_paths, strict=False):
     """Parse and categorize Visa PDFs into frame. Side-effecting, obviously"""
     rules = load_category_rules()
     frames = []
@@ -23,13 +23,18 @@ def build_visa_dataframe(pdf_paths):
     for p in pdf_paths:
         pages = load_pdf_pages(p)
         df = categorize(parse_statement(pages), rules)
-        frames.append(df)
 
         # if we found discrepancies, issue a warning, don't throw
         discrepancies = reconcile(df, parse_control_totals(pages))
         for d in discrepancies:
-            logger.warning("reconcile %s: expected %.2f, got %.2f (delta %.2f) in %s", 
-                           d.check, d.expected, d.actual, d.delta, p)
+            logger.warning(
+                "reconcile %s: expected %.2f, got %.2f (delta %.2f) in %s",
+                d.check, d.expected, d.actual, d.delta, p,
+            )
+        if strict and discrepancies:
+            raise ValueError(f"{p}: {len(discrepancies)} reconciliation failure(s)")
+        frames.append(df)
+                
     return pd.concat(frames, ignore_index=True)
 
 
@@ -57,8 +62,8 @@ def ingest_checking(con, csv_path):
     return upsert_transactions(con, df.assign(source_file=str(csv_path)))
 
 
-def ingest_visa(con, pdf_path):
-    df = assign_txn_ids(build_visa_dataframe([pdf_path]), "visa")
+def ingest_visa(con, pdf_path, strict=False):
+    df = assign_txn_ids(build_visa_dataframe([pdf_path], strict), "visa")
     return upsert_transactions(con, df.assign(source_file=str(pdf_path)))
 
 

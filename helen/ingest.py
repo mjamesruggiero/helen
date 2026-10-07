@@ -12,7 +12,7 @@ def cmd_add(args):
     if args.checking:
         logger.info("checking: inserted %d new rows", pipeline.ingest_checking(con, args.checking))
     if args.visa:
-        logger.info("visa: inserted %d new rows", pipeline.ingest_visa(con, args.visa))
+        logger.info("visa: inserted %d new rows", pipeline.ingest_visa(con, args.visa, strict=args.strict))
     if not args.checking and not args.visa:
         logger.info("No checking or visa statements, taking no action; pass --checking and/or --visa")
 
@@ -24,7 +24,7 @@ def cmd_rebuild(args):
     for csv in sorted(Path("data/raw").glob("*.csv")):
         logger.info("checking: %s; inserted %d new rows", csv, pipeline.ingest_checking(con, csv))
     for pdf in sorted(Path("data/raw").glob("*.pdf")):
-        logger.info("visa: %s; inserted %d new rows", pdf, pipeline.ingest_visa(con, pdf))
+        logger.info("visa: %s; inserted %d new rows", pdf, pipeline.ingest_visa(con, pdf, strict=args.strict))
         
 
 def cmd_status(args):
@@ -45,10 +45,13 @@ def build_parser():
     add = sub.add_parser("add", help="Ingest a checking CSV or a Visa PDF")
     add.add_argument("--checking", type=Path)
     add.add_argument("--visa", type=Path)
+    add.add_argument("--strict", action="store_true", help="fail if a Visa statement doesn't reconcile")
     add.set_defaults(func=cmd_add)
 
-    sub.add_parser("rebuild", 
-                   help="Delete the DB and re-run everything in data/raw").set_defaults(func=cmd_rebuild)
+    rebuild = sub.add_parser("rebuild",
+                   help="Delete the DB and re-run everything in data/raw")
+    rebuild.add_argument("--strict", action="store_true", help="fail if a Visa statement doesn't reconcile")
+    rebuild.set_defaults(func=cmd_rebuild)
     sub.add_parser("status", help="Show counts by source").set_defaults(func=cmd_status)
     return p
 
