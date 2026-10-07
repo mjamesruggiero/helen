@@ -53,6 +53,12 @@ def ingest_visa(con, pdf_path):
 
 def load_analysis_frame(con):
     """Notebook calls this instead of build_dataframe/build_combined.
-    Reads the store, re-derives categories from YAML rules file"""
+    Reads the store, then rehydrates the derived columns that analyze.py
+    expects (the store keeps only the minimal neutral columns), and
+    re-derives categories from the YAML rules file."""
     df = read_transactions(con)
+    # SQLite stores minimal/neutral types; rebuild the clean() shape:
+    df["date"] = pd.to_datetime(df["date"])          # ISO string -> datetime
+    df["month"] = df["date"].dt.to_period("M")       # analyze groups/pivots on this
+    df["is_outflow"] = df["is_outflow"].astype(bool)  # int 0/1 -> bool for masking
     return categorize(df, load_category_rules())

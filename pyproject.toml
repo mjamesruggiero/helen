@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "nbstripout", "jupyterlab", "nbconvert"]
+dev = ["pytest", "nbstripout", "jupyterlab", "nbconvert", "matplotlib", "ipykernel"]
 
 [tool.setuptools.packages.find]
 include = ["helen*"]
